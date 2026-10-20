@@ -1,0 +1,47 @@
+# Dependencies
+node_modules/
+*/node_modules/
+
+# Production build artifacts
+dist/
+*/dist/
+build/
+*/build/
+
+# Environment variables & secrets (NEVER commit to git)
+.env
+.env.*
+!.env.example
+*/*.env
+*/*.env.*
+!*/*.env.example
+
+# Local SQLite databases
+*.db
+*.db-shm
+*.db-wal
+*/*.db
+*/*.db-shm
+*/*.db-wal
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Editor & OS files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Backup git folders
+*.git_subrepo
