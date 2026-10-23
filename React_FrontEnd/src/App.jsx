@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
 import { Navbar } from './components/Navbar';
+import { ProtectedRoute } from './components/ProtectedRoute';
 import { TaskListPage } from './pages/TaskListPage';
 import { TaskDetailPage } from './pages/TaskDetailPage';
 import { TaskFormPage } from './pages/TaskFormPage';
@@ -21,17 +22,17 @@ export function App() {
                 {/* Default route redirects to /tasks */}
                 <Route path="/" element={<Navigate to="/tasks" replace />} />
 
-                {/* Route 1: List View */}
+                {/* Route 1: List View (public — has its own auth banner) */}
                 <Route path="/tasks" element={<TaskListPage />} />
 
-                {/* Route 2: Create Form */}
-                <Route path="/tasks/new" element={<TaskFormPage />} />
+                {/* Route 2: Create Form (protected — requires authentication) */}
+                <Route path="/tasks/new" element={<ProtectedRoute><TaskFormPage /></ProtectedRoute>} />
 
-                {/* Route 3: Detail View */}
-                <Route path="/tasks/:id" element={<TaskDetailPage />} />
+                {/* Route 3: Detail View (protected) */}
+                <Route path="/tasks/:id" element={<ProtectedRoute><TaskDetailPage /></ProtectedRoute>} />
 
-                {/* Route 4: Edit Form */}
-                <Route path="/tasks/:id/edit" element={<TaskFormPage />} />
+                {/* Route 4: Edit Form (protected) */}
+                <Route path="/tasks/:id/edit" element={<ProtectedRoute><TaskFormPage /></ProtectedRoute>} />
 
                 {/* Authentication Routes */}
                 <Route path="/login" element={<AuthPage />} />

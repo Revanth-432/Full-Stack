@@ -53,6 +53,18 @@ export function TaskListPage() {
 
   // Fetch tasks from API
   const loadTasks = useCallback(async () => {
+    if (!isAuthenticated) {
+      setLoading(false);
+      setTasks([]);
+      setPagination({
+        page: 1,
+        limit: 6,
+        total: 0,
+        totalPages: 1,
+      });
+      return;
+    }
+
     setLoading(true);
     setApiError(null);
 
@@ -75,7 +87,7 @@ export function TaskListPage() {
     } finally {
       setLoading(false);
     }
-  }, [debouncedSearch, filters.status, filters.priority, filters.page, filters.limit]);
+  }, [isAuthenticated, debouncedSearch, filters.status, filters.priority, filters.page, filters.limit]);
 
   // Load when authenticated and filters change
   useEffect(() => {
@@ -149,6 +161,11 @@ export function TaskListPage() {
 
   // Seed sample tasks to help the user immediately experience full CRUD
   const handleSeedSamples = async () => {
+    if (!isAuthenticated) {
+      toastError('Authentication required. Please sign in or use Demo Login before generating tasks.');
+      return;
+    }
+
     setIsSeeding(true);
     const sampleTasks = [
       {

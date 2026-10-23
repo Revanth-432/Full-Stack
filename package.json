@@ -6,9 +6,11 @@
   "scripts": {
     "frontend:dev": "npm --prefix React_FrontEnd run dev",
     "frontend:build": "npm --prefix React_FrontEnd run build",
+    "frontend:test": "npm --prefix React_FrontEnd run test",
     "backend:dev": "npm --prefix \"Rest API with Node\" run dev",
     "backend:start": "npm --prefix \"Rest API with Node\" start",
     "backend:test": "npm --prefix \"Rest API with Node\" test",
-    "backend:migrate": "npm --prefix \"Rest API with Node\" run migrate"
+    "backend:migrate": "npm --prefix \"Rest API with Node\" run migrate",
+    "test": "npm run backend:test && npm run frontend:test"
   }
 }

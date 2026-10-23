@@ -5,7 +5,7 @@
  */
 
 function getApiBase() {
-  const envUrl = import.meta.env.VITE_API_BASE_URL || 'https://task-manager-api-lvz.onrender.com';
+  const envUrl = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL) || 'https://task-manager-api-lvz.onrender.com';
   if (!envUrl) {
     return '/api';
   }
@@ -28,16 +28,22 @@ export class ApiError extends Error {
 }
 
 /**
- * Get stored auth token
+ * Get stored auth token safely (supports browser and non-browser environments)
  */
 export function getStoredToken() {
+  if (typeof window === 'undefined' || !window.localStorage) {
+    return '';
+  }
   return localStorage.getItem('taskflow_token') || '';
 }
 
 /**
- * Set stored auth token
+ * Set stored auth token safely
  */
 export function setStoredToken(token) {
+  if (typeof window === 'undefined' || !window.localStorage) {
+    return;
+  }
   if (token) {
     localStorage.setItem('taskflow_token', token);
   } else {
@@ -48,8 +54,26 @@ export function setStoredToken(token) {
 /**
  * Core fetch wrapper with timeout, json formatting and error parsing
  */
-async function request(endpoint, options = {}) {
+async function request(endpoint, options = {}, requiresAuth = null) {
   const token = getStoredToken();
+
+  const isPublic =
+    endpoint === '/health' ||
+    endpoint === '/api/health' ||
+    endpoint === '/auth/login' ||
+    endpoint === '/auth/register';
+
+  const shouldAuthenticate = requiresAuth !== null ? requiresAuth : !isPublic;
+
+  // If endpoint requires authentication and no token exists, do not send
+  // an unauthenticated request to the backend.
+  if (shouldAuthenticate && !token) {
+    if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+      window.dispatchEvent(new CustomEvent('taskflow:unauthorized'));
+    }
+    throw new ApiError('Authentication required. Please sign in to continue.', 401);
+  }
+
   const headers = {
     'Content-Type': 'application/json',
     ...(options.headers || {}),
@@ -98,7 +122,9 @@ async function request(endpoint, options = {}) {
 
       // If token expired or invalid, emit event or let caller handle
       if (response.status === 401) {
-        window.dispatchEvent(new CustomEvent('taskflow:unauthorized'));
+        if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+          window.dispatchEvent(new CustomEvent('taskflow:unauthorized'));
+        }
       }
 
       throw new ApiError(errorMessage, response.status, details);

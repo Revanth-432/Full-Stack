@@ -3,12 +3,11 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft,
   Save,
-  CheckCircle,
   AlertCircle,
-  Clock,
   Sparkles,
 } from 'lucide-react';
 import { fetchTaskById, createTask, updateTask } from '../api/client';
+import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { ErrorAlert } from '../components/ErrorAlert';
@@ -17,6 +16,7 @@ export function TaskFormPage() {
   const { id } = useParams();
   const isEditMode = Boolean(id);
   const navigate = useNavigate();
+  const { isAuthenticated, quickDemoLogin } = useAuth();
   const { success, error: toastError } = useToast();
 
   // Form inputs state
@@ -163,6 +163,12 @@ export function TaskFormPage() {
       return;
     }
 
+    if (!isAuthenticated) {
+      setServerError('Authentication required. Please sign in or use Demo Login to save tasks.');
+      toastError('Authentication required. Please sign in.');
+      return;
+    }
+
     setIsSubmitting(true);
     setServerError(null);
 
@@ -199,8 +205,13 @@ export function TaskFormPage() {
         });
         setErrors((prev) => ({ ...prev, ...serverFieldErrors }));
       }
-      setServerError(err.message || 'Failed to save task to database.');
-      toastError(err.message || 'Submission failed.');
+      if (err.status === 401) {
+        setServerError('Your session has expired or authentication is required. Please sign in again to save this task.');
+        toastError('Authentication required. Please sign in again.');
+      } else {
+        setServerError(err.message || 'Failed to save task to database.');
+        toastError(err.message || 'Submission failed.');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -236,6 +247,55 @@ export function TaskFormPage() {
               : 'Add a new actionable objective with priority routing and deadline tracking.'}
           </p>
         </div>
+
+        {/* Unauthenticated notice if reached without token */}
+        {!isAuthenticated && (
+          <div
+            className="toolbar-card"
+            style={{
+              background: 'var(--bg-card)',
+              border: '1px solid var(--border-medium)',
+              marginBottom: '1.5rem',
+              borderLeft: '4px solid var(--accent)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+              <div>
+                <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.25rem' }}>
+                  👋 Authentication Required
+                </h3>
+                <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                  A valid Bearer token is required to {isEditMode ? 'update' : 'create'} tasks. Sign in to proceed.
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <button
+                  type="button"
+                  className="btn btn-primary btn-sm"
+                  onClick={async () => {
+                    try {
+                      await quickDemoLogin();
+                      success('Signed in as demo user!');
+                      setServerError(null);
+                    } catch (err) {
+                      toastError(`Login failed: ${err.message}`);
+                    }
+                  }}
+                >
+                  <Sparkles size={14} />
+                  One-Click Demo Login
+                </button>
+                <Link
+                  to="/login"
+                  state={{ from: isEditMode ? `/tasks/${id}/edit` : '/tasks/new' }}
+                  className="btn btn-secondary btn-sm"
+                >
+                  Sign In
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
 
         {serverError && (
           <ErrorAlert

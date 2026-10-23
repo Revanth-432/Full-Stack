@@ -1,12 +1,9 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   LogIn,
   UserPlus,
   Zap,
-  Mail,
-  Lock,
-  User,
   AlertCircle,
   CheckSquare,
 } from 'lucide-react';
@@ -19,6 +16,10 @@ export function AuthPage() {
   const { login, register, quickDemoLogin, authError } = useAuth();
   const { success, error: toastError } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Redirect target after successful auth — defaults to /tasks
+  const redirectTo = location.state?.from || '/tasks';
 
   const [formData, setFormData] = useState({
     username: '',
@@ -73,7 +74,7 @@ export function AuthPage() {
         await login(formData.email.trim(), formData.password);
         success('Signed in successfully!');
       }
-      navigate('/tasks');
+      navigate(redirectTo, { replace: true });
     } catch (err) {
       toastError(err.message || 'Authentication failed');
     } finally {
@@ -86,7 +87,7 @@ export function AuthPage() {
     try {
       await quickDemoLogin();
       success('Logged in with Demo Developer account!');
-      navigate('/tasks');
+      navigate(redirectTo, { replace: true });
     } catch (err) {
       toastError(`Demo login failed: ${err.message}`);
     } finally {
