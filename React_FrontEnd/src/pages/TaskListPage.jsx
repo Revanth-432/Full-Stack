@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, ClipboardList, Sparkles, RefreshCw } from 'lucide-react';
-import { fetchTasks, patchTask, deleteTask, createTask } from '../api/client';
+import { fetchTasks, patchTask, deleteTask, createTask, getStoredToken } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { useDebounce } from '../hooks/useDebounce';
@@ -161,9 +161,13 @@ export function TaskListPage() {
 
   // Seed sample tasks to help the user immediately experience full CRUD
   const handleSeedSamples = async () => {
-    if (!isAuthenticated) {
-      toastError('Authentication required. Please sign in or use Demo Login before generating tasks.');
-      return;
+    if (!isAuthenticated && !getStoredToken()) {
+      try {
+        await quickDemoLogin();
+      } catch (authErr) {
+        toastError('Authentication required. Please sign in or use Demo Login first.');
+        return;
+      }
     }
 
     setIsSeeding(true);

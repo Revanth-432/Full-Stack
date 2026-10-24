@@ -29,6 +29,30 @@ let lastFetchCall = null;
 globalThis.fetch = async (url, options) => {
   lastFetchCall = { url, options };
 
+  if (url.includes('/auth/login')) {
+    const body = JSON.parse(options.body || '{}');
+    if (body.email === 'alex.demo@taskflow.dev' && body.password === 'Password123!') {
+      return {
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: { get: () => 'application/json' },
+        json: async () => ({
+          message: 'Login successful.',
+          token: 'demo_jwt_header_payload_signature',
+          user: { id: 3, username: 'alex_developer', email: 'alex.demo@taskflow.dev' },
+        }),
+      };
+    }
+    return {
+      ok: false,
+      status: 401,
+      statusText: 'Unauthorized',
+      headers: { get: () => 'application/json' },
+      json: async () => ({ error: 'Invalid email or password.' }),
+    };
+  }
+
   if (url.includes('/unauthorized-test')) {
     return {
       ok: false,
@@ -51,6 +75,7 @@ globalThis.fetch = async (url, options) => {
 const {
   getStoredToken,
   setStoredToken,
+  loginUser,
   createTask,
   updateTask,
   patchTask,
@@ -66,6 +91,7 @@ setStoredToken('test_token_123');
 assert.strictEqual(getStoredToken(), 'test_token_123', 'Token is properly stored in localStorage');
 setStoredToken('');
 assert.strictEqual(getStoredToken(), '', 'Empty token clears storage');
+console.log('  ✅ PASS: getStoredToken & setStoredToken update taskflow_token correctly');
 
 // 2. Reject unauthenticated task creation without sending network request
 lastFetchCall = null;
@@ -120,5 +146,43 @@ assert.strictEqual(
 );
 assert.strictEqual(createRes.message, 'success', 'Task creation returned response');
 console.log('  ✅ PASS: createTask with token includes Authorization: Bearer <token>');
+
+// 5. Complete Login-to-Task-Creation End-to-End Workflow
+storage.clear();
+assert.strictEqual(getStoredToken(), '', 'Storage starts clean with no token');
+
+// Step A: Perform Login (e.g., Demo Login)
+const loginRes = await loginUser('alex.demo@taskflow.dev', 'Password123!');
+assert(loginRes && loginRes.token, 'loginUser returns token');
+assert.strictEqual(
+  loginRes.token,
+  'demo_jwt_header_payload_signature',
+  'Token matches backend response'
+);
+assert.strictEqual(
+  getStoredToken(),
+  'demo_jwt_header_payload_signature',
+  'JWT token is automatically saved into localStorage under taskflow_token'
+);
+
+// Step B: Perform Task Creation using the stored token
+lastFetchCall = null;
+const taskRes = await createTask({
+  title: 'Evaluator Verified Task',
+  description: 'Testing login-to-create pipeline',
+  priority: 'high',
+});
+assert(lastFetchCall !== null, 'Network request was sent for task creation');
+assert(
+  lastFetchCall.url.endsWith('/tasks'),
+  'Request targets /tasks endpoint'
+);
+assert.strictEqual(
+  lastFetchCall.options.headers['Authorization'],
+  'Bearer demo_jwt_header_payload_signature',
+  'Task creation request contains exact Authorization: Bearer <valid-token>'
+);
+assert.strictEqual(taskRes.message, 'success', 'Task created successfully');
+console.log('  ✅ PASS: Complete Login-to-Task-Creation flow stores JWT and attaches Bearer header');
 
 console.log('\n✨ All frontend API client tests passed successfully!\n');

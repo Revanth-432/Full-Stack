@@ -27,7 +27,10 @@ export function Navbar() {
     try {
       await quickDemoLogin();
       success('Logged in as demo user!');
-      navigate('/tasks');
+      // Only navigate away to /tasks if currently on auth pages
+      if (typeof window !== 'undefined' && (window.location.pathname === '/login' || window.location.pathname === '/register')) {
+        navigate('/tasks');
+      }
     } catch (err) {
       error(`Demo login failed: ${err.message}`);
     } finally {

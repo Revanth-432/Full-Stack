@@ -5,7 +5,8 @@
  */
 
 function getApiBase() {
-  const envUrl = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL) || 'https://task-manager-api-lvz.onrender.com';
+  // Check for explicitly set env var first
+  const envUrl = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL) || 'https://task-manager-api-lvlz.onrender.com';
   if (!envUrl) {
     return '/api';
   }

@@ -25,14 +25,14 @@ export function App() {
                 {/* Route 1: List View (public — has its own auth banner) */}
                 <Route path="/tasks" element={<TaskListPage />} />
 
-                {/* Route 2: Create Form (protected — requires authentication) */}
-                <Route path="/tasks/new" element={<ProtectedRoute><TaskFormPage /></ProtectedRoute>} />
+                {/* Route 2: Create Form */}
+                <Route path="/tasks/new" element={<TaskFormPage />} />
 
-                {/* Route 3: Detail View (protected) */}
-                <Route path="/tasks/:id" element={<ProtectedRoute><TaskDetailPage /></ProtectedRoute>} />
+                {/* Route 3: Detail View */}
+                <Route path="/tasks/:id" element={<TaskDetailPage />} />
 
-                {/* Route 4: Edit Form (protected) */}
-                <Route path="/tasks/:id/edit" element={<ProtectedRoute><TaskFormPage /></ProtectedRoute>} />
+                {/* Route 4: Edit Form */}
+                <Route path="/tasks/:id/edit" element={<TaskFormPage />} />
 
                 {/* Authentication Routes */}
                 <Route path="/login" element={<AuthPage />} />

@@ -6,7 +6,7 @@ import {
   AlertCircle,
   Sparkles,
 } from 'lucide-react';
-import { fetchTaskById, createTask, updateTask } from '../api/client';
+import { fetchTaskById, createTask, updateTask, getStoredToken } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { LoadingSpinner } from '../components/LoadingSpinner';
@@ -163,10 +163,16 @@ export function TaskFormPage() {
       return;
     }
 
-    if (!isAuthenticated) {
-      setServerError('Authentication required. Please sign in or use Demo Login to save tasks.');
-      toastError('Authentication required. Please sign in.');
-      return;
+    // If not authenticated and no token is present, complete the supported
+    // demo authentication flow so the task creation sends a valid Bearer token.
+    if (!isAuthenticated && !getStoredToken()) {
+      try {
+        await quickDemoLogin();
+      } catch (authErr) {
+        setServerError(`Authentication required. Please sign in or use Demo Login: ${authErr.message}`);
+        toastError('Authentication required. Please sign in.');
+        return;
+      }
     }
 
     setIsSubmitting(true);
@@ -205,13 +211,8 @@ export function TaskFormPage() {
         });
         setErrors((prev) => ({ ...prev, ...serverFieldErrors }));
       }
-      if (err.status === 401) {
-        setServerError('Your session has expired or authentication is required. Please sign in again to save this task.');
-        toastError('Authentication required. Please sign in again.');
-      } else {
-        setServerError(err.message || 'Failed to save task to database.');
-        toastError(err.message || 'Submission failed.');
-      }
+      setServerError(err.message || 'Failed to save task to database.');
+      toastError(err.message || 'Submission failed.');
     } finally {
       setIsSubmitting(false);
     }

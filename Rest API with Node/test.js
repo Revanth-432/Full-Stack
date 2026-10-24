@@ -264,6 +264,46 @@ async function run() {
     r = await request("GET", "/tasks", null, otherToken);
     assert(r.data?.tasks?.length === 0, `Other user sees 0 tasks (got ${r.data?.tasks?.length})`);
 
+    console.log("\n🚀 DEMO LOGIN TO TASK CREATION WORKFLOW TEST\n");
+
+    // 29. Demo user login / auto-provision
+    const demoEmail = "alex.demo@taskflow.dev";
+    const demoPassword = "Password123!";
+    const demoUsername = "alex_developer";
+
+    let demoLoginRes = await request("POST", "/auth/login", {
+      email: demoEmail,
+      password: demoPassword,
+    });
+
+    if (demoLoginRes.status === 401) {
+      // User doesn't exist yet, auto-provision
+      await request("POST", "/auth/register", {
+        username: demoUsername,
+        email: demoEmail,
+        password: demoPassword,
+      });
+      demoLoginRes = await request("POST", "/auth/login", {
+        email: demoEmail,
+        password: demoPassword,
+      });
+    }
+
+    assert(demoLoginRes.status === 200, `Demo login → 200 (got ${demoLoginRes.status})`);
+    assert(typeof demoLoginRes.data?.token === "string", "Demo login returns valid JWT token");
+    const demoToken = demoLoginRes.data.token;
+    const demoUserId = demoLoginRes.data.user.id;
+
+    // 30. Create task with demo user token
+    const demoTaskRes = await request("POST", "/tasks", {
+      title: "Evaluator Demo Task",
+      description: "Created via demo auth workflow",
+      priority: "high",
+    }, demoToken);
+    assert(demoTaskRes.status === 201, `Demo task creation → 201 (got ${demoTaskRes.status})`);
+    assert(demoTaskRes.data?.task?.title === "Evaluator Demo Task", "Demo task title matches");
+    assert(demoTaskRes.data?.task?.user_id === demoUserId, "Demo task belongs to demo user");
+
     console.log("\n✨ All tests passed successfully!\n");
   } finally {
     if (serverInstance) {
